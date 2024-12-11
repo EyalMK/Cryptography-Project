@@ -1,12 +1,11 @@
-from aria import ARIA
+from aria_cipher import ARIACipher
 from utilities import xor_bytes
 
 
-# CBC Mode Wrapper
 class CBCMode:
-    def __init__(self, cipher: ARIA, iv: bytes, key_size_bytes: int):
+    def __init__(self, cipher: ARIACipher, iv: bytes, key_size_bytes: int):
         self.cipher = cipher
-        self.iv = iv  # Initialization vector
+        self.iv = iv
         self.key_size_bytes = key_size_bytes
 
     def encrypt(self, plaintext: bytes) -> bytes:
@@ -18,7 +17,7 @@ class CBCMode:
         for block in blocks:
             if len(block) < self.key_size_bytes:  # Padding
                 block = block.ljust(self.key_size_bytes, b'\x00')
-            encrypted_block = self.cipher.encrypt(xor_bytes(block, previous))
+            encrypted_block = self.cipher.encrypt_block(xor_bytes(block, previous))
             ciphertext += encrypted_block
             previous = encrypted_block
 
@@ -31,7 +30,7 @@ class CBCMode:
         previous = self.iv
 
         for block in blocks:
-            decrypted_block = xor_bytes(self.cipher.decrypt(block), previous)
+            decrypted_block = xor_bytes(self.cipher.decrypt_block(block), previous)
             plaintext += decrypted_block
             previous = block
 

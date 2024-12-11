@@ -1,5 +1,5 @@
 import os
-from aria import ARIA
+from aria_cipher import ARIACipher
 from cbc import CBCMode
 
 
@@ -19,7 +19,7 @@ def main():
     print(f"Generated Initialization Vector: {iv.hex()}")
 
     # Initialize ARIA and CBC
-    aria_cipher = ARIA(key)
+    aria_cipher = ARIACipher(key)
     cbc_cipher = CBCMode(aria_cipher, iv, key_size_bytes)
 
     # Encrypt the email
