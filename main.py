@@ -40,6 +40,7 @@ def main():
     encrypted_email = cbc_cipher.encrypt(email_content)
 
     # Send encrypted email and public key
+    print("\n================================================================")
     print("\nSending:")
     print(f"Encrypted Email: {encrypted_email.hex()}")
     print(f"Sender Public Key: {sender_public_key}")
@@ -47,6 +48,7 @@ def main():
     print(f"ElGamal Public Key: {elgamal_public_key}")
 
     # Recipient verifies signature
+    print("\n====================== Verifying Signature =====================")
     is_valid = verify_signature(public_key_message, signature, elgamal_public_key)
     if not is_valid:
         raise ValueError("Signature verification failed!")

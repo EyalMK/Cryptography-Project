@@ -5,8 +5,10 @@ from math import gcd
 from utilities import inverse_mod
 
 # ElGamal parameters
+# P = 2^256 - 2^32 - 977  # This is the prime modulus used by the elliptic curve secp256k1
 P = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f
-G = 2  # Generator (simplified for demonstration)
+
+G = 2  # Todo: Find an efficient generator for P (https://crypto.stackexchange.com/questions/7983/elgamal-generation-of-g-value)
 
 
 def generate_elgamal_key_pair():

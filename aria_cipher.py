@@ -1,16 +1,21 @@
-from __future__ import print_function
+# https://datatracker.ietf.org/doc/html/rfc5794 - Tested using the test data for 128-bit key.
 import os
+
+# Globals
+block_size = 16  # 128 bits
+feistel_rounds = 3
 
 
 class ARIACipher:
+
     def __init__(self, key=None):
-        """Initialize ARIA Cipher with a given key or generate a random key."""
+        """Initialize ARIA Cipher with a given key or generate a random 16-byte key."""
         self.key = key or os.urandom(128 // 8)
-        self.roundkeys_encrypt = []
-        self.roundkeys_decrypt = []
+        self.round_keys_encrypt = []
+        self.round_keys_decrypt = []
 
     @staticmethod
-    def S1box(pos):
+    def s1_box(pos):
         return [[0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76],
                 [0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0],
                 [0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15],
@@ -27,10 +32,10 @@ class ARIACipher:
                 [0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e],
                 [0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf],
                 [0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16]][
-            pos // 16][pos % 16]
+            pos // block_size][pos % block_size]
 
     @staticmethod
-    def S2box(pos):
+    def s2_box(pos):
         return [[0xe2, 0x4e, 0x54, 0xfc, 0x94, 0xc2, 0x4a, 0xcc, 0x62, 0x0d, 0x6a, 0x46, 0x3c, 0x4d, 0x8b, 0xd1],
                 [0x5e, 0xfa, 0x64, 0xcb, 0xb4, 0x97, 0xbe, 0x2b, 0xbc, 0x77, 0x2e, 0x03, 0xd3, 0x19, 0x59, 0xc1],
                 [0x1d, 0x06, 0x41, 0x6b, 0x55, 0xf0, 0x99, 0x69, 0xea, 0x9c, 0x18, 0xae, 0x63, 0xdf, 0xe7, 0xbb],
@@ -47,10 +52,10 @@ class ARIACipher:
                 [0xe6, 0x75, 0xa2, 0xef, 0x2c, 0xb2, 0x1c, 0x9f, 0x5d, 0x6f, 0x80, 0x0a, 0x72, 0x44, 0x9b, 0x6c],
                 [0x90, 0x0b, 0x5b, 0x33, 0x7d, 0x5a, 0x52, 0xf3, 0x61, 0xa1, 0xf7, 0xb0, 0xd6, 0x3f, 0x7c, 0x6d],
                 [0xed, 0x14, 0xe0, 0xa5, 0x3d, 0x22, 0xb3, 0xf8, 0x89, 0xde, 0x71, 0x1a, 0xaf, 0xba, 0xb5, 0x81]][
-            pos // 16][pos % 16]
+            pos // block_size][pos % block_size]
 
     @staticmethod
-    def inv_S1box(pos):
+    def inversed_s1(pos):
         return [[0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb],
                 [0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb],
                 [0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e],
@@ -67,10 +72,10 @@ class ARIACipher:
                 [0x60, 0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, 0x2d, 0xe5, 0x7a, 0x9f, 0x93, 0xc9, 0x9c, 0xef],
                 [0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61],
                 [0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d]][
-            pos // 16][pos % 16]
+            pos // block_size][pos % block_size]
 
     @staticmethod
-    def inv_S2box(pos):
+    def inversed_s2(pos):
         return [[0x30, 0x68, 0x99, 0x1b, 0x87, 0xb9, 0x21, 0x78, 0x50, 0x39, 0xdb, 0xe1, 0x72, 0x09, 0x62, 0x3c],
                 [0x3e, 0x7e, 0x5e, 0x8e, 0xf1, 0xa0, 0xcc, 0xa3, 0x2a, 0x1d, 0xfb, 0xb6, 0xd6, 0x20, 0xc4, 0x8d],
                 [0x81, 0x65, 0xf5, 0x89, 0xcb, 0x9d, 0x77, 0xc6, 0x57, 0x43, 0x56, 0x17, 0xd4, 0x40, 0x1a, 0x4d],
@@ -87,10 +92,10 @@ class ARIACipher:
                 [0xb2, 0x0f, 0xc9, 0x1c, 0xa6, 0xbc, 0xec, 0x73, 0x90, 0x7b, 0xcf, 0x59, 0x8f, 0xa1, 0xf9, 0x2d],
                 [0xf2, 0xb1, 0x00, 0x94, 0x37, 0x9f, 0xd0, 0x2e, 0x9c, 0x6e, 0x28, 0x3f, 0x80, 0xf0, 0x3d, 0xd3],
                 [0x25, 0x8a, 0xb5, 0xe7, 0x42, 0xb3, 0xc7, 0xea, 0xf7, 0x4c, 0x11, 0x33, 0x03, 0xa2, 0xac, 0x60]][
-            pos // 16][pos % 16]
+            pos // block_size][pos % block_size]
 
     @staticmethod
-    def RotXOR(s, n, target):
+    def rotate_and_xor(s, n, target):
         """
             Input: Byte array 's' of size 16, integer 'n', Byte array 'target' of size 16
             Output: Byte array of size 16 which is result of operation
@@ -98,162 +103,156 @@ class ARIACipher:
             """
         q = n // 8
         n %= 8
-        for i in range(16):
-            target[(q + i) % 16] ^= (s[i] >> n)
-            if (n != 0):
-                target[(q + i + 1) % 16] ^= ((s[i] << (8 - n)) % 256)
+        for i in range(block_size):
+            target[(q + i) % block_size] ^= (s[i] >> n)
+            if n != 0:
+                target[(q + i + 1) % block_size] ^= ((s[i] << (8 - n)) % 256)
         return target
 
     @staticmethod
-    def DiffLayer(i):
+    def diffusion_layer(i):
         """
             Input: Byte array 'i' of size 16
             Output: Byte array of size 16 which is diffusion of 'i'
             Diffuse 'i' and return it
             """
-        o = [0] * 16
-        T = i[3] ^ i[4] ^ i[9] ^ i[14]
-        o[0] = i[6] ^ i[8] ^ i[13] ^ T
-        o[5] = i[1] ^ i[10] ^ i[15] ^ T
-        o[11] = i[2] ^ i[7] ^ i[12] ^ T
-        o[14] = i[0] ^ i[5] ^ i[11] ^ T
-        T = i[2] ^ i[5] ^ i[8] ^ i[15]
-        o[1] = i[7] ^ i[9] ^ i[12] ^ T
-        o[4] = i[0] ^ i[11] ^ i[14] ^ T
-        o[10] = i[3] ^ i[6] ^ i[13] ^ T
-        o[15] = i[1] ^ i[4] ^ i[10] ^ T
-        T = i[1] ^ i[6] ^ i[11] ^ i[12]
-        o[2] = i[4] ^ i[10] ^ i[15] ^ T
-        o[7] = i[3] ^ i[8] ^ i[13] ^ T
-        o[9] = i[0] ^ i[5] ^ i[14] ^ T
-        o[12] = i[2] ^ i[7] ^ i[9] ^ T
-        T = i[0] ^ i[7] ^ i[10] ^ i[13]
-        o[3] = i[5] ^ i[11] ^ i[14] ^ T
-        o[6] = i[2] ^ i[9] ^ i[12] ^ T
-        o[8] = i[1] ^ i[4] ^ i[15] ^ T
-        o[13] = i[3] ^ i[6] ^ i[8] ^ T
+        o = [0] * block_size
+        t = i[3] ^ i[4] ^ i[9] ^ i[14]
+        o[0] = i[6] ^ i[8] ^ i[13] ^ t
+        o[5] = i[1] ^ i[10] ^ i[15] ^ t
+        o[11] = i[2] ^ i[7] ^ i[12] ^ t
+        o[14] = i[0] ^ i[5] ^ i[11] ^ t
+        t = i[2] ^ i[5] ^ i[8] ^ i[15]
+        o[1] = i[7] ^ i[9] ^ i[12] ^ t
+        o[4] = i[0] ^ i[11] ^ i[14] ^ t
+        o[10] = i[3] ^ i[6] ^ i[13] ^ t
+        o[15] = i[1] ^ i[4] ^ i[10] ^ t
+        t = i[1] ^ i[6] ^ i[11] ^ i[12]
+        o[2] = i[4] ^ i[10] ^ i[15] ^ t
+        o[7] = i[3] ^ i[8] ^ i[13] ^ t
+        o[9] = i[0] ^ i[5] ^ i[14] ^ t
+        o[12] = i[2] ^ i[7] ^ i[9] ^ t
+        t = i[0] ^ i[7] ^ i[10] ^ i[13]
+        o[3] = i[5] ^ i[11] ^ i[14] ^ t
+        o[6] = i[2] ^ i[9] ^ i[12] ^ t
+        o[8] = i[1] ^ i[4] ^ i[15] ^ t
+        o[13] = i[3] ^ i[6] ^ i[8] ^ t
         return o
 
-    def KeyExpansion(self):
+    def encryption_key_expansion(self):
         """
-            Input: Byte array 'key' of size 16/24/32
-            Output: 13/15/17 size array of byte arrays each of size 16
+            Input: Byte array 'key' of size 16
+            Output: 13 size array of byte arrays each of size 16
             Generate encryption round keys
             """
-        C = [[0x51, 0x7c, 0xc1, 0xb7, 0x27, 0x22, 0x0a, 0x94, 0xfe, 0x13, 0xab, 0xe8, 0xfa, 0x9a, 0x6e, 0xe0],
-             [0x6d, 0xb1, 0x4a, 0xcc, 0x9e, 0x21, 0xc8, 0x20, 0xff, 0x28, 0xb1, 0xd5, 0xef, 0x5d, 0xe2, 0xb0],
-             [0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97, 0x75, 0x04, 0xe8, 0xc9, 0x0e]]
-        R = len(self.key) // 4 + 8
+        ck = [[0x51, 0x7c, 0xc1, 0xb7, 0x27, 0x22, 0x0a, 0x94, 0xfe, 0x13, 0xab, 0xe8, 0xfa, 0x9a, 0x6e, 0xe0],
+              [0x6d, 0xb1, 0x4a, 0xcc, 0x9e, 0x21, 0xc8, 0x20, 0xff, 0x28, 0xb1, 0xd5, 0xef, 0x5d, 0xe2, 0xb0],
+              [0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97, 0x75, 0x04, 0xe8, 0xc9, 0x0e]]
         idx = len(self.key) // 8 - 2
         t = list()
         for i in range(4):
-            t.append(self.S1box(C[idx][4 * i] ^ self.key[4 * i]))
-            t.append(self.S2box(C[idx][4 * i + 1] ^ self.key[4 * i + 1]))
-            t.append(self.inv_S1box(C[idx][4 * i + 2] ^ self.key[4 * i + 2]))
-            t.append(self.inv_S2box(C[idx][4 * i + 3] ^ self.key[4 * i + 3]))
-        W1 = self.DiffLayer(t)
-        if R == 14:
-            for i in range(8):
-                W1[i] ^= self.key[16 + i]
-        elif R == 16:
-            for i in range(16):
-                W1[i] ^= self.key[16 + i]
+            t.append(self.s1_box(ck[idx][4 * i] ^ self.key[4 * i]))
+            t.append(self.s2_box(ck[idx][4 * i + 1] ^ self.key[4 * i + 1]))
+            t.append(self.inversed_s1(ck[idx][4 * i + 2] ^ self.key[4 * i + 2]))
+            t.append(self.inversed_s2(ck[idx][4 * i + 3] ^ self.key[4 * i + 3]))
+        w_1 = self.diffusion_layer(t)
 
         idx = 0 if idx == 2 else idx + 1
         for i in range(4):
-            t[4 * i] = self.inv_S1box(C[idx][4 * i] ^ W1[4 * i])
-            t[4 * i + 1] = self.inv_S2box(C[idx][4 * i + 1] ^ W1[4 * i + 1])
-            t[4 * i + 2] = self.S1box(C[idx][4 * i + 2] ^ W1[4 * i + 2])
-            t[4 * i + 3] = self.S2box(C[idx][4 * i + 3] ^ W1[4 * i + 3])
-        W2 = self.DiffLayer(t)
-        for i in range(16):
-            W2[i] ^= self.key[i]
+            t[4 * i] = self.inversed_s1(ck[idx][4 * i] ^ w_1[4 * i])
+            t[4 * i + 1] = self.inversed_s2(ck[idx][4 * i + 1] ^ w_1[4 * i + 1])
+            t[4 * i + 2] = self.s1_box(ck[idx][4 * i + 2] ^ w_1[4 * i + 2])
+            t[4 * i + 3] = self.s2_box(ck[idx][4 * i + 3] ^ w_1[4 * i + 3])
+        w_2 = self.diffusion_layer(t)
+        for i in range(block_size):
+            w_2[i] ^= self.key[i]
 
         idx = 0 if idx == 2 else idx + 1
         for i in range(4):
-            t[4 * i] = self.S1box(C[idx][4 * i] ^ W2[4 * i])
-            t[4 * i + 1] = self.S2box(C[idx][4 * i + 1] ^ W2[4 * i + 1])
-            t[4 * i + 2] = self.inv_S1box(C[idx][4 * i + 2] ^ W2[4 * i + 2])
-            t[4 * i + 3] = self.inv_S2box(C[idx][4 * i + 3] ^ W2[4 * i + 3])
-        W3 = self.DiffLayer(t)
-        for i in range(16):
-            W3[i] ^= W1[i]
+            t[4 * i] = self.s1_box(ck[idx][4 * i] ^ w_2[4 * i])
+            t[4 * i + 1] = self.s2_box(ck[idx][4 * i + 1] ^ w_2[4 * i + 1])
+            t[4 * i + 2] = self.inversed_s1(ck[idx][4 * i + 2] ^ w_2[4 * i + 2])
+            t[4 * i + 3] = self.inversed_s2(ck[idx][4 * i + 3] ^ w_2[4 * i + 3])
+        w_3 = self.diffusion_layer(t)
+        for i in range(block_size):
+            w_3[i] ^= w_1[i]
 
-        W0 = self.key[:16]
-        roundkeys = list(list())
-        for i in range(3):
-            roundkeys.append(self.RotXOR(W0, 0, [0] * 16))
-            roundkeys[4 * i] = self.RotXOR(W1, i * i * 12 + 19, roundkeys[4 * i])
-            roundkeys.append(self.RotXOR(W1, 0, [0] * 16))
-            roundkeys[4 * i + 1] = self.RotXOR(W2, i * i * 12 + 19, roundkeys[4 * i + 1])
-            roundkeys.append(self.RotXOR(W2, 0, [0] * 16))
-            roundkeys[4 * i + 2] = self.RotXOR(W3, i * i * 12 + 19, roundkeys[4 * i + 2])
-            roundkeys.append(self.RotXOR(W3, 0, [0] * 16))
-            roundkeys[4 * i + 3] = self.RotXOR(W0, i * i * 12 + 19, roundkeys[4 * i + 3])
-        roundkeys.append(self.RotXOR(W0, 0, [0] * 16))
-        roundkeys[12] = self.RotXOR(W1, 97, roundkeys[12])
-        return roundkeys
+        w_0 = self.key[:block_size]
+        round_keys = list(list())
+        for i in range(feistel_rounds):
+            round_keys.append(self.rotate_and_xor(w_0, 0, [0] * block_size))
+            round_keys[4 * i] = self.rotate_and_xor(w_1, i * i * 12 + 19, round_keys[4 * i])
+            round_keys.append(self.rotate_and_xor(w_1, 0, [0] * block_size))
+            round_keys[4 * i + 1] = self.rotate_and_xor(w_2, i * i * 12 + 19, round_keys[4 * i + 1])
+            round_keys.append(self.rotate_and_xor(w_2, 0, [0] * block_size))
+            round_keys[4 * i + 2] = self.rotate_and_xor(w_3, i * i * 12 + 19, round_keys[4 * i + 2])
+            round_keys.append(self.rotate_and_xor(w_3, 0, [0] * block_size))
+            round_keys[4 * i + 3] = self.rotate_and_xor(w_0, i * i * 12 + 19, round_keys[4 * i + 3])
+        round_keys.append(self.rotate_and_xor(w_0, 0, [0] * block_size))
+        round_keys[12] = self.rotate_and_xor(w_1, 97, round_keys[12])
+        return round_keys
 
-    def DecKeyExpansion(self):
+    def decryption_key_expansion(self):
         """
             Input: Byte array 'key' of size 16/24/32
             Output: 13/15/17 size array of byte arrays each of size 16
             Generate decryption round keys
             """
-        R = len(self.key) // 4 + 8
-        roundkeys = self.KeyExpansion()
-        t = [0] * 16
-        for i in range(16):
-            roundkeys[0][i], roundkeys[R][i] = roundkeys[R][i], roundkeys[0][i]
-        for i in range(1, R // 2 + 1):
-            t = self.DiffLayer(roundkeys[i])
-            roundkeys[i] = self.DiffLayer(roundkeys[R - i])
-            for j in range(16):
-                roundkeys[R - i][j] = t[j]
-        return roundkeys
+        rounds = len(self.key) // 4 + 8
+        round_keys = self.encryption_key_expansion()
+        for i in range(block_size):
+            round_keys[0][i], round_keys[rounds][i] = round_keys[rounds][i], round_keys[0][i]
+        for i in range(1, rounds // 2 + 1):
+            t = self.diffusion_layer(round_keys[i])
+            round_keys[i] = self.diffusion_layer(round_keys[rounds - i])
+            for j in range(block_size):
+                round_keys[rounds - i][j] = t[j]
+        return round_keys
 
-    def cipher(self, plain, roundkeys, printInter=False):
+    def cipher(self, plain, round_keys, print_rounds=False):
         """
-            Input: Byte array 'plain' of size 16, 13/15/17 size array 'roundkeys' of byte arrays each of size 16,
-                   boolean 'printInter'
-            Output: Byte array of size 16, which is result of running SPN using 'plain' and 'roundkeys'
-            Run SPN using 'plain' and 'roundkeys' then return the result.
-            Since encryption/decryption of ARIA uses same SPN structure, it depends on roundkeys to determine
+            Input: Byte array 'plain' of size 16, 13/15/17 size array 'round_keys' of byte arrays each of size 16,
+                   boolean 'print_rounds'
+            Output: Byte array of size 16, which is result of running SPN using 'plain' and 'round_keys'
+            Run SPN using 'plain' and 'round_keys' then return the result.
+            Since encryption/decryption of ARIA uses same SPN structure, it depends on round_keys to determine
             whether process is encryption or decryption.
             """
         c = plain[:]
-        t = [0] * 16
-        R = len(roundkeys) - 1
-        for i in range(R // 2):
+        t = [0] * block_size
+        rounds = len(round_keys) - 1
+        i = 0
+        for i in range(rounds // 2):
             # Odd case
             for j in range(4):  # AddRoundKey and SubstLayer
-                t[4 * j] = self.S1box(roundkeys[2 * i][4 * j] ^ c[4 * j])
-                t[4 * j + 1] = self.S2box(roundkeys[2 * i][4 * j + 1] ^ c[4 * j + 1])
-                t[4 * j + 2] = self.inv_S1box(roundkeys[2 * i][4 * j + 2] ^ c[4 * j + 2])
-                t[4 * j + 3] = self.inv_S2box(roundkeys[2 * i][4 * j + 3] ^ c[4 * j + 3])
-            c = self.DiffLayer(t)  # DiffLayer
-            if printInter:
+                t[4 * j] = self.s1_box(round_keys[2 * i][4 * j] ^ c[4 * j])
+                t[4 * j + 1] = self.s2_box(round_keys[2 * i][4 * j + 1] ^ c[4 * j + 1])
+                t[4 * j + 2] = self.inversed_s1(round_keys[2 * i][4 * j + 2] ^ c[4 * j + 2])
+                t[4 * j + 3] = self.inversed_s2(round_keys[2 * i][4 * j + 3] ^ c[4 * j + 3])
+            c = self.diffusion_layer(t)  # DiffLayer
+            if print_rounds:
                 print(" Round {0:0>2}: ".format(2 * i + 1), end='')
-                self.printBlock(c)
+                self.print_block(c)
             # Even case
             for j in range(4):  # AddRoundKey and SubstLayer
-                t[4 * j] = self.inv_S1box(roundkeys[2 * i + 1][4 * j] ^ c[4 * j])
-                t[4 * j + 1] = self.inv_S2box(roundkeys[2 * i + 1][4 * j + 1] ^ c[4 * j + 1])
-                t[4 * j + 2] = self.S1box(roundkeys[2 * i + 1][4 * j + 2] ^ c[4 * j + 2])
-                t[4 * j + 3] = self.S2box(roundkeys[2 * i + 1][4 * j + 3] ^ c[4 * j + 3])
-            c = self.DiffLayer(t)  # DiffLayer
-            if 2 * i + 1 != R - 1 and printInter:
+                t[4 * j] = self.inversed_s1(round_keys[2 * i + 1][4 * j] ^ c[4 * j])
+                t[4 * j + 1] = self.inversed_s2(round_keys[2 * i + 1][4 * j + 1] ^ c[4 * j + 1])
+                t[4 * j + 2] = self.s1_box(round_keys[2 * i + 1][4 * j + 2] ^ c[4 * j + 2])
+                t[4 * j + 3] = self.s2_box(round_keys[2 * i + 1][4 * j + 3] ^ c[4 * j + 3])
+            c = self.diffusion_layer(t)  # DiffLayer
+            if 2 * i + 1 != rounds - 1 and print_rounds:
                 print(" Round {0:0>2}: ".format(2 * i + 2), end='')
-                self.printBlock(c)
-        t = self.DiffLayer(c)
-        for j in range(16):
-            c[j] = roundkeys[len(roundkeys) - 1][j] ^ t[j]
+                self.print_block(c)
+        t = self.diffusion_layer(c)
+        for j in range(block_size):
+            c[j] = round_keys[len(round_keys) - 1][j] ^ t[j]
         print(" Round {0:0>2}: ".format(2 * i + 2), end='')
-        self.printBlock(c)
+        self.print_block(c)
+        print()
         return c
 
     @staticmethod
-    def printBlock(s, end='\n'):
+    def print_block(s, end='\n'):
         """Print the byte array in a formatted hex style."""
         for byte in s:
             print(f"{byte:02x}", end=' ')
@@ -262,31 +261,31 @@ class ARIACipher:
     def print_keys(self):
         """Print the encryption and decryption keys."""
         print("Encryption Round Keys:")
-        for i, key in enumerate(self.roundkeys_encrypt):
+        for i, key in enumerate(self.round_keys_encrypt):
             print(f" Round {i + 1:02}: ", end='')
-            self.printBlock(key)
+            self.print_block(key)
 
         print("Decryption Round Keys:")
-        for i, key in enumerate(self.roundkeys_decrypt):
+        for i, key in enumerate(self.round_keys_decrypt):
             print(f" Round {i + 1:02}: ", end='')
-            self.printBlock(key)
+            self.print_block(key)
 
     def encrypt_block(self, block: bytes) -> bytes:
-        if len(block) != 16:
-            raise ValueError("Block must be exactly 16 bytes")
-        if not self.roundkeys_encrypt:
-            self.roundkeys_encrypt = self.KeyExpansion()
+        if len(block) != block_size:
+            raise ValueError(f"Block must be exactly {block_size} bytes")
+        if not self.round_keys_encrypt:
+            self.round_keys_encrypt = self.encryption_key_expansion()
 
         plain_list = list(block)
-        cipher_list = self.cipher(plain_list, self.roundkeys_encrypt, printInter=False)
+        cipher_list = self.cipher(plain_list, self.round_keys_encrypt, print_rounds=True)
         return bytes(cipher_list)
 
     def decrypt_block(self, block: bytes) -> bytes:
-        if len(block) != 16:
-            raise ValueError("Block must be exactly 16 bytes")
-        if not self.roundkeys_decrypt:
-            self.roundkeys_decrypt = self.DecKeyExpansion()
+        if len(block) != block_size:
+            raise ValueError(f"Block must be exactly {block_size} bytes")
+        if not self.round_keys_decrypt:
+            self.round_keys_decrypt = self.decryption_key_expansion()
 
         cipher_list = list(block)
-        plain_list = self.cipher(cipher_list, self.roundkeys_decrypt, printInter=False)
+        plain_list = self.cipher(cipher_list, self.round_keys_decrypt, print_rounds=True)
         return bytes(plain_list)

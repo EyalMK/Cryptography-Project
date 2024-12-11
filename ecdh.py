@@ -4,6 +4,7 @@ import os
 from utilities import inverse_mod
 
 # Elliptic curve parameters for secp256r1 (P-256)
+# Source: https://neuromancer.sk/std/nist/P-256
 p = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
 a = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC
 b = 0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B
@@ -15,17 +16,17 @@ n = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
 G = (Gx, Gy)
 
 
-def point_add(P, Q):
+def point_add(p_point, q_point):
     """Add two points P and Q on the elliptic curve."""
-    if P is None:  # Point at infinity
-        return Q
-    if Q is None:  # Point at infinity
-        return P
-    if P == Q:
-        return point_double(P)
+    if p_point is None:  # Point at infinity
+        return q_point
+    if q_point is None:  # Point at infinity
+        return p_point
+    if p_point == q_point:
+        return point_double(p_point)
 
-    x1, y1 = P
-    x2, y2 = Q
+    x1, y1 = p_point
+    x2, y2 = q_point
     if x1 == x2 and y1 != y2:
         return None  # Point at infinity
 
@@ -33,25 +34,25 @@ def point_add(P, Q):
     m = ((y2 - y1) * inverse_mod(x2 - x1, p)) % p
     x3 = (m**2 - x1 - x2) % p
     y3 = (m * (x1 - x3) - y1) % p
-    return (x3, y3)
+    return x3, y3
 
 
-def point_double(P):
+def point_double(p_point):
     """Double a point P on the elliptic curve."""
-    if P is None:
+    if p_point is None:
         return None
 
-    x1, y1 = P
+    x1, y1 = p_point
     m = ((3 * x1**2 + a) * inverse_mod(2 * y1, p)) % p
     x3 = (m**2 - 2 * x1) % p
     y3 = (m * (x1 - x3) - y1) % p
-    return (x3, y3)
+    return x3, y3
 
 
-def scalar_mult(k, P):
+def scalar_mult(k, p_point):
     """Multiply a point P by a scalar k."""
     result = None  # Point at infinity
-    addend = P
+    addend = p_point
 
     while k:
         if k & 1:
