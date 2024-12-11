@@ -12,20 +12,22 @@ def rotate_bytes(data: bytes, shift: int) -> bytes:
     return data[shift:] + data[:shift]
 
 
-class RoundsToBytes(Enum):
-    """Number of rounds to bytes mapping."""
-    ROUND_128 = 12
-    ROUND_192 = 14
-    ROUND_256 = 16
+def text_to_hex(text):
+    """
+    Converts a given text into a list of hexadecimal values as integers.
 
-    # Get the number of rounds based on the key size
-    @classmethod
-    def get_rounds(cls, key_size_bytes: int) -> int:
-        if key_size_bytes == 16:
-            return cls.ROUND_128.value
-        elif key_size_bytes == 24:
-            return cls.ROUND_192.value
-        elif key_size_bytes == 32:
-            return cls.ROUND_256.value
-        else:
-            raise ValueError("Invalid key size")
+    :param text: The string to convert.
+    :return: A list of hexadecimal values as integers.
+    """
+    hex_strings = [hex(ord(char)) for char in text]
+    return [int(hex_str, 16) for hex_str in hex_strings]
+
+
+def hex_to_text(hex_list):
+    """
+    Converts a list of hexadecimal values (e.g., [0x48, 0x65]) into a string.
+
+    :param hex_list: A list of hexadecimal values as integers (e.g., [0x48, 0x65]).
+    :return: The translated string.
+    """
+    return ''.join(chr(hex_value) for hex_value in hex_list)

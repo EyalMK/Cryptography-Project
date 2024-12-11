@@ -5,7 +5,7 @@ from cbc import CBCMode
 
 # Main email encryption/decryption
 def main():
-    key_size_bits = int(input("Enter the key size (128, 192, or 256): "))
+    key_size_bits = 128  # Key size in bits
     key_size_bytes = key_size_bits // 8
 
     # Input: Email content

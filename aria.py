@@ -4,6 +4,7 @@ from utilities import xor_bytes, RoundsToBytes, rotate_bytes
 
 # ARIA constants
 Nb = 16  # Block size (in bytes, fixed for ARIA)
+Nr = 10  # Key size is 128 bits (16 bytes), 10 rounds
 
 # The Rijndael S-box.
 # Source: https://en.wikipedia.org/wiki/Rijndael_S-box
@@ -146,19 +147,17 @@ def diffusion_layer(state: bytes) -> bytes:
 class ARIA:
     def __init__(self, key: bytes):
         self.key = key
-        self.key_size = len(key)
-        if self.key_size not in {16, 24, 32}:
-            raise ValueError("Invalid key size. Key must be 128, 192, or 256 bits (16, 24, or 32 bytes).")
-        self.rounds = RoundsToBytes.get_rounds(self.key_size)
+        self.key_size = len(key)  # 16 bytes (128-bit) key size
+        self.rounds = 10  # 128-bit key size, 10 rounds
         self.round_keys = self._generate_round_keys()
 
     def _F(self, state: bytes, ck: bytes) -> bytes:
         """Core transformation function F."""
         # Pad state to 16 bytes if necessary
-        if len(state) != 16:
-            state = state.ljust(16, b'\x00')
-        if len(ck) != 16:
-            ck = ck.ljust(16, b'\x00')
+        if len(state) != Nb:
+            state = state.ljust(Nb, b'\x00')
+        if len(ck) != Nb:
+            ck = ck.ljust(Nb, b'\x00')
 
         state = xor_bytes(state, ck)
         state = substitute_bytes(state, S1)
@@ -168,10 +167,10 @@ class ARIA:
     def _G(self, state: bytes, ck: bytes) -> bytes:
         """G transformation: Linear transformation used in key schedule."""
         # Pad state to 16 bytes if necessary
-        if len(state) != 16:
-            state = state.ljust(16, b'\x00')
-        if len(ck) != 16:
-            ck = ck.ljust(16, b'\x00')
+        if len(state) != Nb:
+            state = state.ljust(Nb, b'\x00')
+        if len(ck) != Nb:
+            ck = ck.ljust(Nb, b'\x00')
 
         rotated = rotate_bytes(state, 3)
         result = xor_bytes(rotated, ck)
@@ -179,10 +178,10 @@ class ARIA:
 
     def _generate_round_keys(self):
         """Generate round keys using the key schedule process."""
-        key_left = self.key[: 16]  # Key left is set to the leftmost 128 bits of the master key.
-        key_right = self.key[16:]  # Key right is whatever remains in the master key.
-        if len(key_right) != 16:
-            key_right = key_right.ljust(16, b'\x00')
+        key_left = self.key[: Nb]  # Key left is set to the leftmost 128 bits of the master key.
+        key_right = self.key[Nb:]  # Key right is whatever remains in the master key.
+        if len(key_right) != Nb:
+            key_right = key_right.ljust(Nb, b'\x00')
         #    W0 = KL,
         #    W1 = FO(W0, CK1) ^ KR,
         #    W2 = FE(W1, CK2) ^ W0,
