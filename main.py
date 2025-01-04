@@ -5,6 +5,7 @@ from cbc import CBCMode
 from ecdh import ECDH
 from elgamal import ELGamal
 
+
 # Main email encryption/decryption
 def encrypt_email(key_size_bytes, content):
     # IV setup
@@ -72,14 +73,16 @@ def encrypt_email(key_size_bytes, content):
 def decrypt_email(key_size_bytes, sender_object):
     # Recipient verifies signature
     print("\n====================== Verifying Signature =====================")
-    is_valid = ELGamal.verify_signature(str(sender_object["sender_public_key"]).encode(), sender_object["signature"], sender_object["elgamal_public_key"])
+    is_valid = ELGamal.verify_signature(str(sender_object["sender_public_key"]).encode(), sender_object["signature"],
+                                        sender_object["elgamal_public_key"])
     if not is_valid:
         raise ValueError("Signature verification failed!")
 
     print("\nSignature verified!")
 
     # Recipient computes shared secret
-    recipient_shared_secret = ECDH.compute_shared_secret(sender_object["recipient_private_key"], sender_object["sender_public_key"])
+    recipient_shared_secret = ECDH.compute_shared_secret(sender_object["recipient_private_key"],
+                                                         sender_object["sender_public_key"])
     if globals.debug_mode:
         print(f"\nShared Secret: {recipient_shared_secret}")
     recipient_derived_key = ECDH.derive_key(recipient_shared_secret, length=key_size_bytes)

@@ -13,7 +13,20 @@ def print_block(s, block_number, end='\n'):
 
 
 def xor_bytes(a: bytes, b: bytes) -> bytes:
-    """XOR two byte arrays."""
+    """
+        XORs two byte sequences.
+
+        Args:
+            a (bytes): The first byte sequence.
+            b (bytes): The second byte sequence.
+
+        Returns:
+            bytes: The XOR result.
+
+        XOR in Cryptography:
+        - Fundamental to CBC mode for chaining blocks and ARIA.
+        - Ensures plaintext is randomized before encryption.
+    """
     return bytes(i ^ j for i, j in zip(a, b))
 
 

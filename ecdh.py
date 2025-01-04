@@ -17,6 +17,12 @@ G = (Gx, Gy)
 
 
 class ECDH:
+    """
+       Implements the Elliptic Curve Diffie-Hellman (ECDH) key exchange protocol
+       using secp265r1 (256-bit prime field Weierstrass curve) parameters.
+       Enables two parties to securely establish a shared secret over an insecure channel.
+       Based on the difficulty of solving the discrete logarithm problem in elliptic curve groups ([56]).
+   """
     @staticmethod
     def point_add(p_point, q_point):
         """Add two points P and Q on the elliptic curve."""
@@ -66,20 +72,64 @@ class ECDH:
 
     @staticmethod
     def generate_key_pair():
-        """Generate a private-public key pair."""
+        """
+           Generates a private and public key pair.
+
+           Returns:
+               tuple: (private_key, public_key)
+                   - private_key (int): A randomly chosen private key.
+                   - public_key (int): The corresponding public key computed on the curve.
+
+           Key Generation:
+           - Private key: A randomly chosen integer in the range [1, n-1], where n is the curve's order.
+           - Public key: Computed as the product of the private key and the curve's base point.
+
+           Security Note:
+           - The private key must remain secret to prevent compromise of the shared secret - as taught in our lectures.
+       """
         private_key = int.from_bytes(os.urandom(32), byteorder="big") % n
         public_key = ECDH.scalar_mult(private_key, G)
         return private_key, public_key
 
     @staticmethod
     def compute_shared_secret(private_key, public_key):
-        """Compute the shared secret."""
+        """
+            Computes the shared secret using the ECDH algorithm.
+
+            Args:
+                private_key (int): The private key of the party.
+                public_key (int): The public key of the other party.
+
+            Returns:
+                bytes: A shared secret derived from the ECDH computation.
+
+            Shared Secret:
+            - Derived as the scalar multiplication of the private key with the other's public key.
+            - Provides a common value for both parties without revealing private keys.
+
+            Security Note:
+            - The shared secret is typically hashed before use in symmetric key encryption - as taught in our lectures.
+        """
         shared_point = ECDH.scalar_mult(private_key, public_key)
         return shared_point[0]  # Use x-coordinate as the shared secret
 
     @staticmethod
     def derive_key(shared_secret, length=16):
-        """Derive a symmetric key from the shared secret using SHA-256."""
+        """
+            Derives a symmetric key from the shared secret.
+
+            Args:
+                shared_secret (bytes): The shared secret from the ECDH computation.
+                length (int): The desired length of the derived key in bytes.
+
+            Returns:
+                bytes: The derived symmetric key.
+
+            Key Derivation:
+            - Ensures the shared secret is transformed into a usable key for encryption.
+            - Hash-based key derivation methods are recommended - as taught in our lectures.
+        """
+        # Todo: look at shared_secret_bytes -- might not be course-correct...
         shared_secret_bytes = shared_secret.to_bytes((shared_secret.bit_length() + 7) // 8, byteorder="big")
         hashed = hashlib.sha256(shared_secret_bytes).digest()
         return hashed[:length]  # Truncate to desired length
