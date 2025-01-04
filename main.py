@@ -5,15 +5,9 @@ from cbc import CBCMode
 from ecdh import ECDH
 from elgamal import ELGamal
 
-
-# Globals
-iv = []
-
-
 # Main email encryption/decryption
 def encrypt_email(key_size_bytes, content):
     # IV setup
-    global iv
     iv = os.urandom(key_size_bytes)  # Generate a random IV
     if globals.debug_mode:
         print(f"Generated Initialization Vector: {iv.hex()}")
@@ -54,7 +48,7 @@ def encrypt_email(key_size_bytes, content):
 
     # Initialize ARIA and CBC
     sender_aria_cipher = ARIACipher(derived_key)
-    sender_cbc_cipher = CBCMode(sender_aria_cipher, iv, key_size_bytes)
+    sender_cbc_cipher = CBCMode(sender_aria_cipher, key_size_bytes, iv)
 
     # Encrypt the email
     encrypted_email = sender_cbc_cipher.encrypt(content)
@@ -94,7 +88,7 @@ def decrypt_email(key_size_bytes, sender_object):
 
     # Decrypt the email
     recipient_cipher = ARIACipher(recipient_derived_key)
-    recipient_cbc = CBCMode(recipient_cipher, iv, key_size_bytes)
+    recipient_cbc = CBCMode(recipient_cipher, key_size_bytes)
     decrypted_email = recipient_cbc.decrypt(sender_object["encrypted_email"])
     print(f"\nDecrypted Email: {decrypted_email.decode()}")
 

@@ -5,10 +5,10 @@ from utilities import xor_bytes
 
 
 class CBCMode:
-    def __init__(self, cipher: ARIACipher, iv: bytes, key_size_bytes: int):
+    def __init__(self, cipher: ARIACipher, key_size_bytes: int, iv: bytes | None = None):
         self.cipher = cipher
-        self.iv = iv
         self.key_size_bytes = key_size_bytes
+        self.iv = iv
 
     def encrypt(self, plaintext: bytes) -> bytes:
         """Encrypt data using CBC mode."""
@@ -25,13 +25,17 @@ class CBCMode:
             previous = encrypted_block
 
         print("\nE-mail successfully encrypted using ARIA cipher in CBC mode.")
-        return ciphertext
+        return self.iv + ciphertext
 
     def decrypt(self, ciphertext: bytes) -> bytes:
         """Decrypt data using CBC mode."""
+        # Extract the IV from the beginning of the ciphertext
+        iv = ciphertext[:self.key_size_bytes]
+        ciphertext = ciphertext[self.key_size_bytes:]
+
         blocks = [ciphertext[i:i + self.key_size_bytes] for i in range(0, len(ciphertext), self.key_size_bytes)]
         plaintext = b""
-        previous = self.iv
+        previous = iv
 
         print("========================= Decrypting =========================")
         for block in blocks:
