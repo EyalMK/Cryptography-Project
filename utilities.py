@@ -1,5 +1,5 @@
 # Helper functions
-from globals import BLOCK_SIZE, debug_mode
+from config import BLOCK_SIZE, debug_mode
 
 
 def print_block(s, block_number, end='\n'):

@@ -1,7 +1,7 @@
 # https://datatracker.ietf.org/doc/html/rfc5794 - Tested using the test data for 128-bit key.
 import os
 
-from globals import BLOCK_SIZE, KEY_SIZE
+from config import BLOCK_SIZE, KEY_SIZE
 from utilities import rotate_and_xor, invert_s_box, print_block
 
 # ARIA - Globals
