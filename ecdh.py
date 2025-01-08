@@ -111,7 +111,11 @@ class ECDH:
             - The shared secret is typically hashed before use in symmetric key encryption - as taught in our lectures.
         """
         shared_point = ECDH.scalar_mult(private_key, public_key)
-        return shared_point[0]  # Use x-coordinate as the shared secret
+
+        # Use x-coordinate as the shared secret
+        # According to the lectures, we can perform any number of manipulations on x and y
+        # E.g: use x + y, or x/2 + y/4, etc, or just y, etc.
+        return shared_point[0]
 
     @staticmethod
     def derive_key(shared_secret, length=16):
