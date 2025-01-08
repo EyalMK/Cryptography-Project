@@ -3,16 +3,15 @@ import sys
 import config
 from email_recipient import Recipient
 from email_sender import Sender
-from utilities import clear_stdout
 
 
 def main():
     print("Email Encryption/Decryption using ECDH, ElGamal, ARIA, and CBC")
     print("===============================================================")
     print("Would you like to use debug mode? (y/n)")
-    config.debug_mode = input().lower() == 'y'
+    config.set_debug_mode(input().lower() == 'y')
 
-    if config.debug_mode:
+    if config.get_debug_mode():
         print("Debug mode enabled!")
         print("Key size (bytes):", config.KEY_SIZE)
 

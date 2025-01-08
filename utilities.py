@@ -1,13 +1,12 @@
 # Helper functions
 import os
-import sys
 
-from config import BLOCK_SIZE, debug_mode
+from config import BLOCK_SIZE, get_debug_mode
 
 
 def print_block(s, block_number, end='\n'):
     """Print the byte array in a formatted hex style."""
-    if not debug_mode:
+    if not get_debug_mode():
         return
     print(" Round {0:0>2}: ".format(block_number), end='')
     for byte in s:

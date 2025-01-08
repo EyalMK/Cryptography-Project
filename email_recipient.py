@@ -3,7 +3,7 @@ from aria_cipher import ARIACipher
 from cbc import CBCMode
 from ecdh import ECDH
 from elgamal import ELGamal
-from config import KEY_SIZE, debug_mode
+from config import KEY_SIZE, _debug_mode
 from utilities import exportToFile
 
 
@@ -12,7 +12,7 @@ class Recipient:
         self.private_key, self.public_key = ECDH.generate_key_pair()
         self.sender_public_key = None
         self.elgamal_public_key = None
-        if debug_mode:
+        if _debug_mode:
             print("\n======================= Recipient ========================")
             print(f"Recipient Private Key: {self.private_key}")
             print(f"Recipient Public Key: {self.public_key}")
@@ -20,7 +20,7 @@ class Recipient:
     def exchange_public_keys(self, sender_public_key, elgamal_public_key):
         self.sender_public_key = sender_public_key
         self.elgamal_public_key = elgamal_public_key
-        if debug_mode:
+        if _debug_mode:
             print("\n======================= Key Exchange ========================")
             print(f"Sender Public Key: {self.sender_public_key}")
             print(f"ElGamal Public Key: {self.elgamal_public_key}")
@@ -37,7 +37,7 @@ class Recipient:
     def __derive_key_from_shared_secret(self, sender_public_key):
         # Recipient computes shared secret
         recipient_shared_secret = ECDH.compute_shared_secret(self.private_key, sender_public_key)
-        if debug_mode:
+        if _debug_mode:
             print(f"\nShared Secret: {recipient_shared_secret}")
 
         # Derive key from shared secret
