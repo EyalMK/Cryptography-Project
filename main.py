@@ -1,6 +1,9 @@
+import sys
+
 import config
 from email_recipient import Recipient
 from email_sender import Sender
+from utilities import clear_stdout
 
 
 def main():
@@ -16,16 +19,26 @@ def main():
     sender_object = None
     recipient = None
     while True:
-        print("\nSelect a mode:")
+        print("\nModes:")
         print("1. Encrypt Email")
         print("2. Decrypt Email")
         print("3. Exit")
-        mode = input()
+        mode = input("Enter mode: ")
 
+        # clear_stdout()
         if mode == '1':
             print("\n======================= Encrypt Email ========================")
             # Input: Email content
-            email_content = input("Enter the email content to encrypt: ").encode()
+            lines = []
+            print("Enter email content (blank line to finish):")
+            while True:
+                line = input()
+                if not line.strip():
+                    # Stop if a blank line is entered
+                    break
+                lines.append(line)
+
+            email_content = "\n".join(lines).encode()
 
             sender = Sender()
             recipient = Recipient()

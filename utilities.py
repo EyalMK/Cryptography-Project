@@ -1,4 +1,7 @@
 # Helper functions
+import os
+import sys
+
 from config import BLOCK_SIZE, debug_mode
 
 
@@ -74,3 +77,24 @@ def invert_s_box(s_box_2d):
     ]
 
     return inverse_s_box_2d
+
+
+def exportToFile(filename, content):
+    with open(filename, 'w+', encoding='utf-8') as file:
+        if isinstance(content, dict):
+            for key, value in content.items():
+                file.write(f"{key}: {value}\n")
+            return
+        file.write(content)
+
+
+def clear_stdout():
+    """
+    Clears the console in a cross-platform way:
+      - On Windows, runs 'cls'
+      - On Unix/Linux/Mac, runs 'clear'
+    """
+    if os.name == 'nt':
+        os.system('cls')
+    else:
+        os.system('clear')

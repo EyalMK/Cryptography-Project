@@ -8,7 +8,14 @@ from utilities import inverse_mod
 # P = 2^256 - 2^32 - 977  # This is the prime modulus used by the elliptic curve secp256k1
 P = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f
 
-G = 2  # Todo: Find an efficient generator for P (https://crypto.stackexchange.com/questions/7983/elgamal-generation-of-g-value)
+# Generator source: https://github.com/maK-/Digital-Signature-ElGamal/blob/master/generator-g
+G = int(
+    "44ec9d52c8f9189e49cd7c70253c2eb3154dd4f08467a64a0267c9defe4119f2e"
+    "373388cfa350a4e66e432d638ccdc58eb703e31d4c84e50398f9f91677e88641"
+    "a2d2f6157e2f4ec538088dcf5940b053c622e53bab0b4e84b1465f5738f54966"
+    "4bd7430961d3e5a2e7bceb62418db747386a58ff267a9939833beefb7a6fd68",
+    16
+)
 
 
 class ELGamal:
